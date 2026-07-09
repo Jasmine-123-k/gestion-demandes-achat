@@ -12,10 +12,14 @@
         .header { background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .header-top { display: flex; justify-content: space-between; align-items: center; }
         .header-left { display: flex; align-items: center; gap: 1rem; }
-        .logo-circle { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 600; }
+        .logo { height: 50px; }
         .header-left h1 { font-size: 24px; font-weight: 600; }
         .user-section { display: flex; gap: 1rem; align-items: center; }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; }
+        .avatar:hover { background: #1d4ed8; }
+        .user-info { text-align: right; }
+        .user-info strong { display: block; font-size: 14px; }
+        .user-info small { font-size: 12px; color: #666; }
         .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem; }
         .stat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; text-align: center; }
         .stat-value { font-size: 24px; font-weight: 600; color: #2563eb; }
@@ -44,11 +48,13 @@
         .status-pending { background: #fef3c7; color: #92400e; }
         .status-approved { background: #d1fae5; color: #065f46; }
         .status-validated { background: #dbeafe; color: #1e40af; }
+        .status-rejected { background: #fee2e2; color: #991b1b; }
         .login { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .login-box { background: white; border-radius: 12px; padding: 2.5rem; max-width: 450px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
         .login-header { text-align: center; margin-bottom: 2rem; }
-        .login-logo { width: 80px; height: 80px; margin: 0 auto 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: 600; }
-        .login-box h1 { font-size: 28px; margin-bottom: 0.5rem; text-align: center; }
+        .login-logo { width: 120px; height: 60px; margin: 0 auto 1.5rem; }
+        .login-logo img { width: 100%; height: 100%; object-fit: contain; }
+        .login-box h1 { font-size: 24px; margin-bottom: 0.5rem; text-align: center; }
         .login-box p { text-align: center; color: #666; margin-bottom: 2rem; }
         .login-info { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 12px; color: #1e40af; line-height: 1.6; }
         .empty { text-align: center; padding: 2rem; color: #999; }
@@ -56,12 +62,19 @@
         .notification { position: fixed; top: 20px; right: 20px; background: white; border-left: 4px solid #10b981; border-radius: 8px; padding: 1rem; max-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 2000; animation: slideIn 0.3s ease-out; }
         .notification.error { border-left-color: #ef4444; }
         @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .logout-menu { position: absolute; top: 50px; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.5rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
+        .logout-menu.show { display: block; }
+        .logout-menu button { width: 100%; padding: 0.5rem 1rem; border: none; background: transparent; cursor: pointer; text-align: left; font-size: 13px; }
+        .logout-menu button:hover { background: #f3f4f6; }
     </style>
 </head>
 <body>
     <div id="app"></div>
 
     <script>
+        // Logo PC PLUS GROUP en base64
+        const logoBase64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDIwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIiBmaWxsPSJ3aGl0ZSIvPgo8dGV4dCB4PSIyMCIgeT0iMzUiIGZvbnQtc2l6ZT0iMjgiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMDAwMDAwIj5QQzwvdGV4dD4KPHN2ZyB4PSI0MCIgeT0iMTAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj4KICA8dGV4dCB4PSI0IiB5PSIyOCIgZm9udC1zaXplPSIyNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMxMTY4N2YiPlBMVVM8L3RleHQ+Cjwvc3ZnPgo8dGV4dCB4PSI5MCIgeT0iMzUiIGZvbnQtc2l6ZT0iMjgiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMDA5OUNDIj5HUk9VUDwvdGV4dD4KPHR0IHg9IjIwIiB5PSI2MCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzY2NjY2NiI+aG9sZGluZ3MuYS48L3RleHQ+Cjwvc3ZnPg==';
+
         const app = {
             state: {
                 currentUser: null,
@@ -69,6 +82,7 @@
                 demandes: [],
                 notifications: [],
                 currentTab: 'demandes',
+                nextId: 1,
                 users: {
                     'jasmine': { password: 'jasmine123', name: 'Jasmine Koui', role: 'acheteur' },
                     'cheick': { password: 'cheick123', name: 'Cheick Cissé', role: 'acheteur' },
@@ -79,15 +93,22 @@
 
             init() {
                 const savedUser = localStorage.getItem('currentUser');
+                const savedDemandes = localStorage.getItem('demandes');
+                const savedNextId = localStorage.getItem('nextId');
+                
+                if (savedDemandes) {
+                    this.state.demandes = JSON.parse(savedDemandes);
+                }
+                if (savedNextId) {
+                    this.state.nextId = parseInt(savedNextId);
+                }
+                
                 if (savedUser) {
                     const user = JSON.parse(savedUser);
                     this.state.currentUser = user.name;
                     this.state.currentRole = user.role;
-                    const savedDemandes = localStorage.getItem('demandes');
-                    if (savedDemandes) {
-                        this.state.demandes = JSON.parse(savedDemandes);
-                    }
                     this.render();
+                    this.enableNotifications();
                 } else {
                     this.renderLogin();
                 }
@@ -101,6 +122,7 @@
                     localStorage.setItem('currentUser', JSON.stringify(user));
                     this.notify('Bienvenue ' + user.name + ' !', 'success');
                     this.render();
+                    this.enableNotifications();
                 } else {
                     this.notify('Identifiants invalides', 'error');
                 }
@@ -111,6 +133,30 @@
                 this.state.currentRole = null;
                 localStorage.removeItem('currentUser');
                 this.renderLogin();
+            },
+
+            enableNotifications() {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    setInterval(() => this.checkForNotifications(), 5000);
+                } else if ('Notification' in window && Notification.permission !== 'denied') {
+                    Notification.requestPermission();
+                }
+            },
+
+            checkForNotifications() {
+                if (this.state.currentRole === 'dg' || this.state.currentRole === 'compta') {
+                    const toApprove = this.getDAsToApprove();
+                    if (toApprove.length > 0) {
+                        const lastNotified = localStorage.getItem('lastNotified');
+                        if (!lastNotified || Date.now() - parseInt(lastNotified) > 300000) {
+                            new Notification('Nouvelle demande !', {
+                                body: 'Vous avez ' + toApprove.length + ' demande(s) à valider',
+                                icon: logoBase64
+                            });
+                            localStorage.setItem('lastNotified', Date.now().toString());
+                        }
+                    }
+                }
             },
 
             refresh() {
@@ -134,7 +180,7 @@
 
             createDA(filiale, description, montant, urgence) {
                 const da = {
-                    id: Date.now(),
+                    id: this.state.nextId++,
                     filiale,
                     description,
                     montant,
@@ -150,7 +196,8 @@
                 };
                 this.state.demandes.unshift(da);
                 localStorage.setItem('demandes', JSON.stringify(this.state.demandes));
-                this.notify('DA créée !', 'success');
+                localStorage.setItem('nextId', this.state.nextId.toString());
+                this.notify('DA #' + da.id + ' créée !', 'success');
                 this.state.currentTab = 'demandes';
                 this.render();
             },
@@ -197,9 +244,15 @@
                     <div class="login">
                         <div class="login-box">
                             <div class="login-header">
-                                <div class="login-logo">PC</div>
-                                <h1>PC PLUS GROUP</h1>
-                                <p>Gestion des Demandes d'Achat</p>
+                                <div class="login-logo">
+                                    <svg width="180" height="60" viewBox="0 0 180 60" xmlns="http://www.w3.org/2000/svg">
+                                        <text x="5" y="40" font-size="32" font-weight="bold" fill="#000">PC</text>
+                                        <text x="50" y="40" font-size="32" font-weight="bold" fill="#1168a7">PLUS</text>
+                                        <text x="130" y="40" font-size="32" font-weight="bold" fill="#0099cc">GROUP</text>
+                                    </svg>
+                                </div>
+                                <h1>Gestion des Demandes</h1>
+                                <p>Système centralisé en temps réel</p>
                             </div>
                             <form onsubmit="app.handleLogin(event)">
                                 <div class="form-group">
@@ -240,17 +293,23 @@
                     <div class="header">
                         <div class="header-top">
                             <div class="header-left">
-                                <div class="logo-circle">PC</div>
+                                <svg width="140" height="50" viewBox="0 0 180 60" xmlns="http://www.w3.org/2000/svg" class="logo">
+                                    <text x="5" y="40" font-size="32" font-weight="bold" fill="#000">PC</text>
+                                    <text x="50" y="40" font-size="32" font-weight="bold" fill="#1168a7">PLUS</text>
+                                    <text x="130" y="40" font-size="32" font-weight="bold" fill="#0099cc">GROUP</text>
+                                </svg>
                                 <h1>Gestion des Demandes d'Achat</h1>
                             </div>
-                            <div class="user-section">
-                                <div class="avatar">${this.state.currentUser.charAt(0).toUpperCase()}</div>
-                                <div>
-                                    <strong>${this.state.currentUser}</strong><br>
+                            <div class="user-section" style="position: relative;">
+                                <div class="avatar" onclick="document.querySelector('.logout-menu').classList.toggle('show')" title="Cliquez pour vous déconnecter">${this.state.currentUser.charAt(0).toUpperCase()}</div>
+                                <div class="user-info">
+                                    <strong>${this.state.currentUser}</strong>
                                     <small>${this.state.currentRole === 'dg' ? 'Direction Générale' : this.state.currentRole === 'acheteur' ? 'Acheteur' : 'Comptabilité'}</small>
                                 </div>
                                 ${daToApprove.length > 0 ? '<div class="badge">' + daToApprove.length + '</div>' : ''}
-                                <button class="btn btn-secondary btn-small" onclick="app.logout()">Déconnexion</button>
+                                <div class="logout-menu">
+                                    <button onclick="app.logout()">Déconnexion</button>
+                                </div>
                             </div>
                         </div>
                         <div class="stats">
@@ -290,7 +349,7 @@
                 if (demandes.length === 0) {
                     return '<div class="empty">📋 Aucune demande en cours</div>';
                 }
-                let html = '<button class="btn" onclick="app.exportExcel()">📊 Exporter Excel</button><table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Description</th><th>Montant</th><th>Urgence</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
+                let html = '<button class="btn" onclick="app.exportExcel()">📊 Exporter Excel</button><table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Description</th><th>Montant</th><th>Urgence</th><th>Demandeur</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
                 demandes.forEach(da => {
                     const canApprove = (this.state.currentRole === 'dg' && da.approvals.acheteur.approuve && !da.approvals.dg.approuve) || 
                                       (this.state.currentRole === 'compta' && da.approvals.dg.approuve && !da.approvals.compta.approuve);
@@ -300,6 +359,7 @@
                         <td>${da.description || '-'}</td>
                         <td>${Number(da.montant).toLocaleString('fr-FR')} XOF</td>
                         <td>${da.urgence}</td>
+                        <td>${da.demandeur}</td>
                         <td><span class="status ${da.statut === 'En attente' ? 'status-pending' : 'status-approved'}">${da.statut}</span></td>
                         <td>${canApprove ? '<button class="btn btn-success btn-small" onclick="app.approveDA(' + da.id + ')">✓</button>' : ''}</td>
                     </tr>`;
@@ -312,7 +372,7 @@
                 if (daToApprove.length === 0) {
                     return '<div class="empty">✓ Aucune demande à valider</div>';
                 }
-                let html = '<table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Description</th><th>Montant</th><th>Urgence</th><th>Actions</th></tr></thead><tbody>';
+                let html = '<table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Description</th><th>Montant</th><th>Urgence</th><th>Demandeur</th><th>Actions</th></tr></thead><tbody>';
                 daToApprove.forEach(da => {
                     html += `<tr>
                         <td><strong>#${da.id}</strong></td>
@@ -320,6 +380,7 @@
                         <td>${da.description || '-'}</td>
                         <td><strong>${Number(da.montant).toLocaleString('fr-FR')} XOF</strong></td>
                         <td>${da.urgence}</td>
+                        <td>${da.demandeur}</td>
                         <td><button class="btn btn-success btn-small" onclick="app.approveDA(${da.id})">✓ Approuver</button> <button class="btn btn-danger btn-small" onclick="app.rejectDA(${da.id})">✗ Rejeter</button></td>
                     </tr>`;
                 });
@@ -366,14 +427,15 @@
                 if (archived.length === 0) {
                     return '<div class="empty">📦 Archive vide</div>';
                 }
-                let html = '<table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Description</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead><tbody>';
+                let html = '<table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Description</th><th>Montant</th><th>Demandeur</th><th>Statut</th><th>Date</th></tr></thead><tbody>';
                 archived.forEach(da => {
-                    const statusClass = da.statut === 'Validée' ? 'status-validated' : 'status-pending';
+                    const statusClass = da.statut === 'Validée' ? 'status-validated' : 'status-rejected';
                     html += `<tr>
                         <td><strong>#${da.id}</strong></td>
                         <td>${da.filiale}</td>
                         <td>${da.description || '-'}</td>
                         <td>${Number(da.montant).toLocaleString('fr-FR')} XOF</td>
+                        <td>${da.demandeur}</td>
                         <td><span class="status ${statusClass}">${da.statut}</span></td>
                         <td>${da.dateCreation}</td>
                     </tr>`;
@@ -409,8 +471,8 @@
                     'Description': da.description,
                     'Montant (XOF)': da.montant,
                     'Urgence': da.urgence,
-                    'Statut': da.statut,
                     'Demandeur': da.demandeur,
+                    'Statut': da.statut,
                     'Date': da.dateCreation
                 }));
                 const ws = XLSX.utils.json_to_sheet(data);
