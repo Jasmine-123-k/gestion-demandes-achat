@@ -1,8 +1,6 @@
 {
   "version": 2,
   "buildCommand": "npm install",
-  "public": true,
-  "env": {},
   "regions": ["cdg1"],
   "functions": {
     "api/**": {
