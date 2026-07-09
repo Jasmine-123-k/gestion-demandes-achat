@@ -1,10 +1,15 @@
 {
   "version": 2,
-  "buildCommand": "npm install",
-  "regions": ["cdg1"],
-  "functions": {
-    "api/**": {
-      "maxDuration": 30
+  "builds": [
+    {
+      "src": "api/app.js",
+      "use": "@vercel/node"
     }
-  }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/app.js"
+    }
+  ]
 }
