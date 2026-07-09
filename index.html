@@ -14,12 +14,16 @@
         .header-left { display: flex; align-items: center; gap: 1rem; }
         .logo { height: 50px; }
         .header-left h1 { font-size: 24px; font-weight: 600; }
-        .user-section { display: flex; gap: 1rem; align-items: center; }
+        .user-section { display: flex; gap: 1rem; align-items: center; position: relative; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; }
         .avatar:hover { background: #1d4ed8; }
         .user-info { text-align: right; }
         .user-info strong { display: block; font-size: 14px; }
         .user-info small { font-size: 12px; color: #666; }
+        .logout-menu { position: absolute; top: 50px; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.5rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; z-index: 100; }
+        .logout-menu.show { display: block; }
+        .logout-menu button { width: 100%; padding: 0.5rem 1rem; border: none; background: transparent; cursor: pointer; text-align: left; font-size: 13px; }
+        .logout-menu button:hover { background: #f3f4f6; }
         .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem; }
         .stat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; text-align: center; }
         .stat-value { font-size: 24px; font-weight: 600; color: #2563eb; }
@@ -50,31 +54,36 @@
         .status-validated { background: #dbeafe; color: #1e40af; }
         .status-rejected { background: #fee2e2; color: #991b1b; }
         .login { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .login-box { background: white; border-radius: 12px; padding: 2.5rem; max-width: 450px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .login-box { background: white; border-radius: 12px; padding: 2.5rem; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
         .login-header { text-align: center; margin-bottom: 2rem; }
-        .login-logo { width: 120px; height: 60px; margin: 0 auto 1.5rem; }
-        .login-logo img { width: 100%; height: 100%; object-fit: contain; }
+        .login-logo { width: 150px; height: 60px; margin: 0 auto 1.5rem; }
+        .login-logo svg { width: 100%; height: 100%; }
         .login-box h1 { font-size: 24px; margin-bottom: 0.5rem; text-align: center; }
         .login-box p { text-align: center; color: #666; margin-bottom: 2rem; }
+        .login-users { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+        .user-card { background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .user-card:hover { border-color: #2563eb; background: #eff6ff; }
+        .user-card.dg:hover { border-color: #8b5cf6; }
+        .user-card.compta:hover { border-color: #ec4899; }
+        .user-card-avatar { width: 50px; height: 50px; border-radius: 50%; margin: 0 auto 0.5rem; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 600; }
+        .user-card.acheteur .user-card-avatar { background: #2563eb; }
+        .user-card.dg .user-card-avatar { background: #8b5cf6; }
+        .user-card.compta .user-card-avatar { background: #ec4899; }
+        .user-card-name { font-weight: 600; font-size: 13px; margin-bottom: 0.25rem; }
+        .user-card-role { font-size: 11px; color: #666; }
+        .login-form { border-top: 1px solid #e5e7eb; padding-top: 2rem; }
         .login-info { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 12px; color: #1e40af; line-height: 1.6; }
         .empty { text-align: center; padding: 2rem; color: #999; }
         .badge { display: inline-block; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
         .notification { position: fixed; top: 20px; right: 20px; background: white; border-left: 4px solid #10b981; border-radius: 8px; padding: 1rem; max-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 2000; animation: slideIn 0.3s ease-out; }
         .notification.error { border-left-color: #ef4444; }
         @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .logout-menu { position: absolute; top: 50px; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.5rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
-        .logout-menu.show { display: block; }
-        .logout-menu button { width: 100%; padding: 0.5rem 1rem; border: none; background: transparent; cursor: pointer; text-align: left; font-size: 13px; }
-        .logout-menu button:hover { background: #f3f4f6; }
     </style>
 </head>
 <body>
     <div id="app"></div>
 
     <script>
-        // Logo PC PLUS GROUP en base64
-        const logoBase64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDIwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIiBmaWxsPSJ3aGl0ZSIvPgo8dGV4dCB4PSIyMCIgeT0iMzUiIGZvbnQtc2l6ZT0iMjgiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMDAwMDAwIj5QQzwvdGV4dD4KPHN2ZyB4PSI0MCIgeT0iMTAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj4KICA8dGV4dCB4PSI0IiB5PSIyOCIgZm9udC1zaXplPSIyNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMxMTY4N2YiPlBMVVM8L3RleHQ+Cjwvc3ZnPgo8dGV4dCB4PSI5MCIgeT0iMzUiIGZvbnQtc2l6ZT0iMjgiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMDA5OUNDIj5HUk9VUDwvdGV4dD4KPHR0IHg9IjIwIiB5PSI2MCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzY2NjY2NiI+aG9sZGluZ3MuYS48L3RleHQ+Cjwvc3ZnPg==';
-
         const app = {
             state: {
                 currentUser: null,
@@ -86,8 +95,8 @@
                 users: {
                     'jasmine': { password: 'jasmine123', name: 'Jasmine Koui', role: 'acheteur' },
                     'cheick': { password: 'cheick123', name: 'Cheick Cissé', role: 'acheteur' },
-                    'issouf': { password: 'issouf123', name: 'Mr Issouf Bamba', role: 'dg' },
-                    'compta': { password: 'compta123', name: 'Comptabilité', role: 'compta' }
+                    'issouf': { password: '', name: 'Mr Issouf Bamba', role: 'dg' },
+                    'compta': { password: '', name: 'Comptabilité', role: 'compta' }
                 }
             },
 
@@ -116,7 +125,7 @@
 
             login(username, password) {
                 const user = this.state.users[username.toLowerCase()];
-                if (user && user.password === password) {
+                if (user && (user.password === '' || user.password === password)) {
                     this.state.currentUser = user.name;
                     this.state.currentRole = user.role;
                     localStorage.setItem('currentUser', JSON.stringify(user));
@@ -150,8 +159,7 @@
                         const lastNotified = localStorage.getItem('lastNotified');
                         if (!lastNotified || Date.now() - parseInt(lastNotified) > 300000) {
                             new Notification('Nouvelle demande !', {
-                                body: 'Vous avez ' + toApprove.length + ' demande(s) à valider',
-                                icon: logoBase64
+                                body: 'Vous avez ' + toApprove.length + ' demande(s) à valider'
                             });
                             localStorage.setItem('lastNotified', Date.now().toString());
                         }
@@ -232,9 +240,9 @@
 
             getDAsToApprove() {
                 if (this.state.currentRole === 'dg') {
-                    return this.state.demandes.filter(d => d.approvals.acheteur.approuve && !d.approvals.dg.approuve && d.statut === 'En attente');
+                    return this.state.demandes.filter(d => d.approvals.acheteur.approuve && d.approvals.dg.approuve === null && d.statut === 'En attente');
                 } else if (this.state.currentRole === 'compta') {
-                    return this.state.demandes.filter(d => d.approvals.dg.approuve && !d.approvals.compta.approuve && d.statut === 'Approuvée - En attente Compta');
+                    return this.state.demandes.filter(d => d.approvals.dg.approuve === true && d.approvals.compta.approuve === null && d.statut === 'Approuvée - En attente Compta');
                 }
                 return [];
             },
@@ -245,7 +253,7 @@
                         <div class="login-box">
                             <div class="login-header">
                                 <div class="login-logo">
-                                    <svg width="180" height="60" viewBox="0 0 180 60" xmlns="http://www.w3.org/2000/svg">
+                                    <svg viewBox="0 0 180 60" xmlns="http://www.w3.org/2000/svg">
                                         <text x="5" y="40" font-size="32" font-weight="bold" fill="#000">PC</text>
                                         <text x="50" y="40" font-size="32" font-weight="bold" fill="#1168a7">PLUS</text>
                                         <text x="130" y="40" font-size="32" font-weight="bold" fill="#0099cc">GROUP</text>
@@ -254,23 +262,45 @@
                                 <h1>Gestion des Demandes</h1>
                                 <p>Système centralisé en temps réel</p>
                             </div>
-                            <form onsubmit="app.handleLogin(event)">
-                                <div class="form-group">
-                                    <label>Identifiant</label>
-                                    <input type="text" id="username" placeholder="jasmine" required autofocus>
+
+                            <div class="login-users">
+                                <div class="user-card acheteur" onclick="app.login('jasmine', 'jasmine123')">
+                                    <div class="user-card-avatar">👤</div>
+                                    <div class="user-card-name">Jasmine Koui</div>
+                                    <div class="user-card-role">Acheteur</div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Mot de passe</label>
-                                    <input type="password" id="password" placeholder="jasmine123" required>
+                                <div class="user-card acheteur" onclick="app.login('cheick', 'cheick123')">
+                                    <div class="user-card-avatar">👤</div>
+                                    <div class="user-card-name">Cheick Cissé</div>
+                                    <div class="user-card-role">Acheteur</div>
                                 </div>
-                                <button type="submit" class="btn" style="width: 100%;">Se connecter</button>
-                            </form>
+                                <div class="user-card dg" onclick="app.login('issouf', '')">
+                                    <div class="user-card-avatar">👔</div>
+                                    <div class="user-card-name">Mr Issouf Bamba</div>
+                                    <div class="user-card-role">Direction Générale</div>
+                                </div>
+                            </div>
+
+                            <div class="login-form">
+                                <form onsubmit="app.handleLogin(event)">
+                                    <div class="form-group">
+                                        <label>Ou connectez-vous avec un identifiant</label>
+                                        <input type="text" id="username" placeholder="Identifiant" autofocus>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Mot de passe (optionnel)</label>
+                                        <input type="password" id="password" placeholder="Mot de passe">
+                                    </div>
+                                    <button type="submit" class="btn" style="width: 100%;">Se connecter</button>
+                                </form>
+                            </div>
+
                             <div class="login-info">
-                                <strong>Comptes de test :</strong><br>
+                                <strong>Comptes disponibles :</strong><br>
                                 📊 jasmine / jasmine123 (Acheteur)<br>
                                 📊 cheick / cheick123 (Acheteur)<br>
-                                👔 issouf / issouf123 (DG)<br>
-                                💼 compta / compta123 (Comptabilité)
+                                👔 issouf (DG - sans mdp)<br>
+                                💼 compta (Comptabilité - sans mdp)
                             </div>
                         </div>
                     </div>
@@ -300,7 +330,7 @@
                                 </svg>
                                 <h1>Gestion des Demandes d'Achat</h1>
                             </div>
-                            <div class="user-section" style="position: relative;">
+                            <div class="user-section">
                                 <div class="avatar" onclick="document.querySelector('.logout-menu').classList.toggle('show')" title="Cliquez pour vous déconnecter">${this.state.currentUser.charAt(0).toUpperCase()}</div>
                                 <div class="user-info">
                                     <strong>${this.state.currentUser}</strong>
@@ -322,7 +352,7 @@
 
                     <div class="tabs">
                         <button class="tab ${this.state.currentTab === 'demandes' ? 'active' : ''}" onclick="app.switchTab('demandes')">Toutes les demandes</button>
-                        ${daToApprove.length > 0 ? '<button class="tab ' + (this.state.currentTab === 'validation' ? 'active' : '') + '" onclick="app.switchTab(\'validation\')">À valider (' + daToApprove.length + ')</button>' : ''}
+                        <button class="tab ${this.state.currentTab === 'validation' ? 'active' : ''}" onclick="app.switchTab('validation')">À valider ${daToApprove.length > 0 ? '(' + daToApprove.length + ')' : ''}</button>
                         ${this.state.currentRole === 'acheteur' ? '<button class="tab ' + (this.state.currentTab === 'creer' ? 'active' : '') + '" onclick="app.switchTab(\'creer\')">Créer une DA</button>' : ''}
                         <button class="tab ${this.state.currentTab === 'archive' ? 'active' : ''}" onclick="app.switchTab('archive')">Archive</button>
                     </div>
@@ -351,8 +381,8 @@
                 }
                 let html = '<button class="btn" onclick="app.exportExcel()">📊 Exporter Excel</button><table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Description</th><th>Montant</th><th>Urgence</th><th>Demandeur</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
                 demandes.forEach(da => {
-                    const canApprove = (this.state.currentRole === 'dg' && da.approvals.acheteur.approuve && !da.approvals.dg.approuve) || 
-                                      (this.state.currentRole === 'compta' && da.approvals.dg.approuve && !da.approvals.compta.approuve);
+                    const canApprove = (this.state.currentRole === 'dg' && da.approvals.acheteur.approuve && da.approvals.dg.approuve === null) || 
+                                      (this.state.currentRole === 'compta' && da.approvals.dg.approuve === true && da.approvals.compta.approuve === null);
                     html += `<tr>
                         <td><strong>#${da.id}</strong></td>
                         <td>${da.filiale}</td>
