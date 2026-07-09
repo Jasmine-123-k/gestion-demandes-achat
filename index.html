@@ -54,27 +54,12 @@
         .status-validated { background: #dbeafe; color: #1e40af; }
         .status-rejected { background: #fee2e2; color: #991b1b; }
         .login { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .login-box { background: white; border-radius: 12px; padding: 2.5rem; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .login-box { background: white; border-radius: 12px; padding: 2.5rem; max-width: 450px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
         .login-header { text-align: center; margin-bottom: 2rem; }
         .login-logo { width: 100%; max-width: 180px; height: auto; margin: 0 auto 1.5rem; }
         .login-logo svg { width: 100%; height: auto; }
         .login-box h1 { font-size: 24px; margin-bottom: 0.5rem; text-align: center; }
         .login-box p { text-align: center; color: #666; margin-bottom: 2rem; }
-        .login-users { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
-        @media (min-width: 600px) { .login-users { grid-template-columns: 1fr 1fr; } }
-        @media (min-width: 800px) { .login-users { grid-template-columns: 1fr 1fr 1fr 1fr; } }
-        .user-card { background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s; }
-        .user-card:hover { border-color: #2563eb; background: #eff6ff; }
-        .user-card.dg:hover { border-color: #8b5cf6; }
-        .user-card.compta:hover { border-color: #ec4899; }
-        .user-card-avatar { width: 50px; height: 50px; border-radius: 50%; margin: 0 auto 0.5rem; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 600; }
-        .user-card.acheteur .user-card-avatar { background: #2563eb; }
-        .user-card.dg .user-card-avatar { background: #8b5cf6; }
-        .user-card.compta .user-card-avatar { background: #ec4899; }
-        .user-card-name { font-weight: 600; font-size: 13px; margin-bottom: 0.25rem; }
-        .user-card-role { font-size: 11px; color: #666; }
-        .login-form { border-top: 1px solid #e5e7eb; padding-top: 2rem; }
-        .login-info { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 12px; color: #1e40af; line-height: 1.6; }
         .empty { text-align: center; padding: 2rem; color: #999; }
         .badge { display: inline-block; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
         .notification { position: fixed; top: 20px; right: 20px; background: white; border-left: 4px solid #10b981; border-radius: 8px; padding: 1rem; max-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 2000; animation: slideIn 0.3s ease-out; }
@@ -94,18 +79,36 @@
                 notifications: [],
                 currentTab: 'demandes',
                 nextId: 1,
+                unlocked: false,
+                allowedUser: null,
                 users: {
                     'jasmine': { password: 'jasmine123', name: 'Jasmine Koui', role: 'acheteur' },
                     'cheick': { password: 'cheick123', name: 'Cheick Cissé', role: 'acheteur' },
-                    'issouf': { password: '', name: 'Mr Issouf Bamba', role: 'dg' },
-                    'compta': { password: '', name: 'Comptabilité', role: 'compta' }
-                }
+                    'issouf': { password: 'issouf123', name: 'Mr Issouf Bamba', role: 'dg' },
+                    'compta': { password: 'compta123', name: 'Comptabilité', role: 'compta' }
+                },
+                accessCode: 'PC2024'
             },
 
             init() {
+                // Récupère l'utilisateur autorisé depuis l'URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const userParam = urlParams.get('user');
+                
+                if (userParam && this.state.users[userParam]) {
+                    this.state.allowedUser = userParam;
+                } else if (!userParam) {
+                    this.renderNoAccess('Paramètre utilisateur manquant');
+                    return;
+                } else {
+                    this.renderNoAccess('Utilisateur invalide');
+                    return;
+                }
+
                 const savedUser = localStorage.getItem('currentUser');
                 const savedDemandes = localStorage.getItem('demandes');
                 const savedNextId = localStorage.getItem('nextId');
+                const unlocked = localStorage.getItem('unlocked');
                 
                 if (savedDemandes) {
                     this.state.demandes = JSON.parse(savedDemandes);
@@ -113,29 +116,79 @@
                 if (savedNextId) {
                     this.state.nextId = parseInt(savedNextId);
                 }
+                if (unlocked === 'true') {
+                    this.state.unlocked = true;
+                }
                 
-                if (savedUser) {
+                if (!this.state.unlocked) {
+                    this.renderAccessScreen();
+                } else if (savedUser) {
                     const user = JSON.parse(savedUser);
-                    this.state.currentUser = user.name;
-                    this.state.currentRole = user.role;
-                    this.render();
-                    this.enableNotifications();
+                    if (user.username === this.state.allowedUser) {
+                        this.state.currentUser = user.name;
+                        this.state.currentRole = user.role;
+                        this.render();
+                        this.enableNotifications();
+                    } else {
+                        this.renderLogin();
+                    }
                 } else {
                     this.renderLogin();
                 }
             },
 
+            renderNoAccess(message) {
+                document.getElementById('app').innerHTML = `
+                    <div class="login">
+                        <div class="login-box">
+                            <div class="login-header">
+                                <div class="login-logo">
+                                    <svg viewBox="0 0 220 80" xmlns="http://www.w3.org/2000/svg">
+                                        <text x="10" y="60" font-size="48" font-weight="bold" fill="#000">PC</text>
+                                        <text x="70" y="60" font-size="48" font-weight="bold" fill="#1168a7">PLUS</text>
+                                        <text x="150" y="60" font-size="48" font-weight="bold" fill="#0099cc">GROUP</text>
+                                    </svg>
+                                </div>
+                                <h1>Accès Refusé</h1>
+                            </div>
+                            <p style="text-align: center; color: #666; margin: 1rem 0;">⚠️ ${message}</p>
+                            <p style="text-align: center; color: #999; font-size: 12px;">Veuillez utiliser le lien qui vous a été fourni.</p>
+                        </div>
+                    </div>
+                `;
+            },
+
+            verifyAccess(code) {
+                if (code === this.state.accessCode) {
+                    this.state.unlocked = true;
+                    localStorage.setItem('unlocked', 'true');
+                    this.renderLogin();
+                } else {
+                    this.notify('Clé d\'accès incorrecte', 'error');
+                }
+            },
+
             login(username, password) {
+                // Vérifie que l'utilisateur correspond à celui autorisé par l'URL
+                if (username.toLowerCase() !== this.state.allowedUser) {
+                    this.notify('Accès non autorisé pour cet utilisateur', 'error');
+                    return;
+                }
+
                 const user = this.state.users[username.toLowerCase()];
-                if (user && (user.password === '' || user.password === password)) {
+                if (user && user.password === password) {
                     this.state.currentUser = user.name;
                     this.state.currentRole = user.role;
-                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    localStorage.setItem('currentUser', JSON.stringify({
+                        username: username.toLowerCase(),
+                        name: user.name,
+                        role: user.role
+                    }));
                     this.notify('Bienvenue ' + user.name + ' !', 'success');
                     this.render();
                     this.enableNotifications();
                 } else {
-                    this.notify('Identifiants invalides', 'error');
+                    this.notify('Mot de passe incorrect', 'error');
                 }
             },
 
@@ -249,7 +302,8 @@
                 return [];
             },
 
-            renderLogin() {
+            renderAccessScreen() {
+                const userName = this.state.users[this.state.allowedUser]?.name || 'Utilisateur';
                 document.getElementById('app').innerHTML = `
                     <div class="login">
                         <div class="login-box">
@@ -261,46 +315,56 @@
                                         <text x="150" y="60" font-size="48" font-weight="bold" fill="#0099cc">GROUP</text>
                                     </svg>
                                 </div>
-                                <h1>Gestion des Demandes</h1>
-                                <p>Système centralisé en temps réel</p>
+                                <h1>Accès Sécurisé</h1>
+                                <p>Bienvenue ${userName}</p>
                             </div>
+                            <form onsubmit="app.handleAccessCode(event)">
+                                <div class="form-group">
+                                    <label>Clé d'accès</label>
+                                    <input type="password" id="accessCode" placeholder="••••••" required autofocus>
+                                </div>
+                                <button type="submit" class="btn" style="width: 100%;">Accéder</button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            },
 
-                            <div class="login-users">
-                                <div class="user-card acheteur" onclick="app.login('jasmine', 'jasmine123')">
-                                    <div class="user-card-avatar">👤</div>
-                                    <div class="user-card-name">Jasmine Koui</div>
-                                    <div class="user-card-role">Acheteur</div>
-                                </div>
-                                <div class="user-card acheteur" onclick="app.login('cheick', 'cheick123')">
-                                    <div class="user-card-avatar">👤</div>
-                                    <div class="user-card-name">Cheick Cissé</div>
-                                    <div class="user-card-role">Acheteur</div>
-                                </div>
-                                <div class="user-card dg" onclick="app.login('issouf', '')">
-                                    <div class="user-card-avatar">👔</div>
-                                    <div class="user-card-name">Mr Issouf Bamba</div>
-                                    <div class="user-card-role">Direction Générale</div>
-                                </div>
-                                <div class="user-card compta" onclick="app.login('compta', '')">
-                                    <div class="user-card-avatar">💼</div>
-                                    <div class="user-card-name">Comptabilité</div>
-                                    <div class="user-card-role">Compta</div>
-                                </div>
-                            </div>
+            handleAccessCode(e) {
+                e.preventDefault();
+                const code = document.getElementById('accessCode').value;
+                this.verifyAccess(code);
+            },
 
-                            <div class="login-form">
-                                <form onsubmit="app.handleLogin(event)">
-                                    <div class="form-group">
-                                        <label>Ou connectez-vous avec un identifiant</label>
-                                        <input type="text" id="username" placeholder="Identifiant" autofocus>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Mot de passe (optionnel)</label>
-                                        <input type="password" id="password" placeholder="Mot de passe">
-                                    </div>
-                                    <button type="submit" class="btn" style="width: 100%;">Se connecter</button>
-                                </form>
+            renderLogin() {
+                const user = this.state.users[this.state.allowedUser];
+                const roleLabel = user.role === 'dg' ? 'Direction Générale' : user.role === 'acheteur' ? 'Acheteur' : 'Comptabilité';
+                
+                document.getElementById('app').innerHTML = `
+                    <div class="login">
+                        <div class="login-box">
+                            <div class="login-header">
+                                <div class="login-logo">
+                                    <svg viewBox="0 0 220 80" xmlns="http://www.w3.org/2000/svg">
+                                        <text x="10" y="60" font-size="48" font-weight="bold" fill="#000">PC</text>
+                                        <text x="70" y="60" font-size="48" font-weight="bold" fill="#1168a7">PLUS</text>
+                                        <text x="150" y="60" font-size="48" font-weight="bold" fill="#0099cc">GROUP</text>
+                                    </svg>
+                                </div>
+                                <h1>${user.name}</h1>
+                                <p>${roleLabel}</p>
                             </div>
+                            <form onsubmit="app.handleLogin(event)">
+                                <div class="form-group">
+                                    <label>Identifiant</label>
+                                    <input type="text" id="username" value="${this.state.allowedUser}" readonly style="background: #f3f4f6; cursor: not-allowed;">
+                                </div>
+                                <div class="form-group">
+                                    <label>Mot de passe</label>
+                                    <input type="password" id="password" placeholder="••••••" required autofocus>
+                                </div>
+                                <button type="submit" class="btn" style="width: 100%;">Se connecter</button>
+                            </form>
                         </div>
                     </div>
                 `;
