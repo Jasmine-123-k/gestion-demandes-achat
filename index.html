@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Demandes d'Achat - PC PLUS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 1rem; }
+        .header { background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .header-top h1 { font-size: 24px; font-weight: 600; }
+        .user-section { display: flex; gap: 1rem; align-items: center; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .stat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: 600; color: #2563eb; }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
+        .tab { padding: 0.75rem 1.5rem; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: 500; color: #666; border-bottom: 2px solid transparent; }
+        .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+        .content { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 0.35rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; }
+        .btn { padding: 0.6rem 1.2rem; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .btn:hover { background: #1d4ed8; }
+        .btn-secondary { background: #f3f4f6; color: #333; }
+        .btn-success { background: #10b981; }
+        .btn-danger { background: #ef4444; }
+        .btn-small { padding: 0.35rem 0.75rem; font-size: 12px; }
+        .table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 1rem; }
+        .table th { background: #f3f4f6; padding: 0.75rem; text-align: left; font-weight: 600; }
+        .table td { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; }
+        .status { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-approved { background: #d1fae5; color: #065f46; }
+        .login { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .login-box { background: white; border-radius: 12px; padding: 2.5rem; max-width: 400px; width: 90%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .login-box h1 { font-size: 28px; margin-bottom: 0.5rem; text-align: center; }
+        .login-box p { text-align: center; color: #666; margin-bottom: 2rem; }
+        .login-info { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 12px; color: #1e40af; line-height: 1.6; }
+        .empty { text-align: center; padding: 2rem; color: #999; }
+        .badge { display: inline-block; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        const app = {
+            state: {
+                currentUser: null,
+                currentRole: null,
+                demandes: [],
+                notifications: [],
+                currentTab: 'demandes',
+                users: {
+                    'jasmine': { password: 'jasmine123', name: 'Jasmine Koui', role: 'acheteur' },
+                    'cheick': { password: 'cheick123', name: 'Cheick Cissé', role: 'acheteur' },
+                    'issouf': { password: 'issouf123', name: 'Mr Issouf Bamba', role: 'dg' },
+                    'compta': { password: 'compta123', name: 'Comptabilité', role: 'compta' }
+                }
+            },
+
+            init() {
+                const savedUser = localStorage.getItem('currentUser');
+                if (savedUser) {
+                    const user = JSON.parse(savedUser);
+                    this.state.currentUser = user.name;
+                    this.state.currentRole = user.role;
+                    const savedDemandes = localStorage.getItem('demandes');
+                    if (savedDemandes) {
+                        this.state.demandes = JSON.parse(savedDemandes);
+                    }
+                    this.render();
+                } else {
+                    this.renderLogin();
+                }
+            },
+
+            login(username, password) {
+                const user = this.state.users[username.toLowerCase()];
+                if (user && user.password === password) {
+                    this.state.currentUser = user.name;
+                    this.state.currentRole = user.role;
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    this.notify('Bienvenue ' + user.name + ' !', 'success');
+                    this.render();
+                } else {
+                    this.notify('Identifiants invalides', 'error');
+                }
+            },
+
+            logout() {
+                this.state.currentUser = null;
+                this.state.currentRole = null;
+                localStorage.removeItem('currentUser');
+                this.renderLogin();
+            },
+
+            notify(message, type) {
+                const id = Date.now();
+                this.state.notifications.push({ id, message, type });
+                setTimeout(() => {
+                    this.state.notifications = this.state.notifications.filter(n => n.id !== id);
+                }, 3000);
+            },
+
+            createDA(filiale, montant, urgence) {
+                const da = {
+                    id: Date.now(),
+                    filiale,
+                    montant,
+                    urgence,
+                    demandeur: this.state.currentUser,
+                    dateCreation: new Date().toLocaleDateString('fr-FR'),
+                    statut: 'En attente',
+                    approvals: {
+                        acheteur: { approuve: true, date: new Date().toLocaleDateString('fr-FR') },
+                        dg: { approuve: null, date: null },
+                        compta: { approuve: null, date: null }
+                    }
+                };
+                this.state.demandes.unshift(da);
+                localStorage.setItem('demandes', JSON.stringify(this.state.demandes));
+                this.notify('DA créée !', 'success');
+                this.state.currentTab = 'demandes';
+                this.render();
+            },
+
+            approveDA(id) {
+                const da = this.state.demandes.find(d => d.id === id);
+                if (!da) return;
+
+                if (this.state.currentRole === 'dg') {
+                    da.approvals.dg.approuve = true;
+                    da.approvals.dg.date = new Date().toLocaleDateString('fr-FR');
+                    da.statut = 'Approuvée - En attente Compta';
+                } else if (this.state.currentRole === 'compta') {
+                    da.approvals.compta.approuve = true;
+                    da.approvals.compta.date = new Date().toLocaleDateString('fr-FR');
+                    da.statut = 'Validée';
+                }
+
+                localStorage.setItem('demandes', JSON.stringify(this.state.demandes));
+                this.notify('DA #' + id + ' approuvée !', 'success');
+                this.render();
+            },
+
+            getDAsToApprove() {
+                if (this.state.currentRole === 'dg') {
+                    return this.state.demandes.filter(d => d.approvals.acheteur.approuve && !d.approvals.dg.approuve && d.statut === 'En attente');
+                } else if (this.state.currentRole === 'compta') {
+                    return this.state.demandes.filter(d => d.approvals.dg.approuve && !d.approvals.compta.approuve && d.statut === 'Approuvée - En attente Compta');
+                }
+                return [];
+            },
+
+            renderLogin() {
+                document.getElementById('app').innerHTML = `
+                    <div class="login">
+                        <div class="login-box">
+                            <h1>Gestion des Demandes</h1>
+                            <p>Système centralisé en temps réel</p>
+                            <form onsubmit="app.handleLogin(event)">
+                                <div class="form-group">
+                                    <label>Identifiant</label>
+                                    <input type="text" id="username" placeholder="jasmine" required autofocus>
+                                </div>
+                                <div class="form-group">
+                                    <label>Mot de passe</label>
+                                    <input type="password" id="password" placeholder="jasmine123" required>
+                                </div>
+                                <button type="submit" class="btn" style="width: 100%;">Se connecter</button>
+                            </form>
+                            <div class="login-info">
+                                <strong>Comptes de test :</strong><br>
+                                jasmine / jasmine123<br>
+                                cheick / cheick123<br>
+                                issouf / issouf123<br>
+                                compta / compta123
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            handleLogin(e) {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                this.login(username, password);
+            },
+
+            render() {
+                const daToApprove = this.getDAsToApprove();
+                const demandes = this.state.demandes.filter(d => d.statut !== 'Validée' && d.statut !== 'Rejetée');
+
+                let html = `<div class="container">
+                    <div class="header">
+                        <div class="header-top">
+                            <h1>Gestion des Demandes d'Achat</h1>
+                            <div class="user-section">
+                                <div class="avatar">${this.state.currentUser.charAt(0).toUpperCase()}</div>
+                                <div>
+                                    <strong>${this.state.currentUser}</strong><br>
+                                    <small>${this.state.currentRole === 'dg' ? 'Direction Générale' : this.state.currentRole === 'acheteur' ? 'Acheteur' : 'Comptabilité'}</small>
+                                </div>
+                                ${daToApprove.length > 0 ? '<div class="badge">' + daToApprove.length + '</div>' : ''}
+                                <button class="btn btn-secondary btn-small" onclick="app.logout()">Déconnexion</button>
+                            </div>
+                        </div>
+                        <div class="stats">
+                            <div class="stat"><div class="stat-value">${this.state.demandes.length}</div>Total</div>
+                            <div class="stat"><div class="stat-value">${this.state.demandes.filter(d => d.statut === 'En attente').length}</div>En attente</div>
+                            <div class="stat"><div class="stat-value">${this.state.demandes.filter(d => d.statut === 'Approuvée - En attente Compta').length}</div>Approuvées</div>
+                            <div class="stat"><div class="stat-value">${this.state.demandes.filter(d => d.statut === 'Validée').length}</div>Validées</div>
+                        </div>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab ${this.state.currentTab === 'demandes' ? 'active' : ''}" onclick="app.switchTab('demandes')">Toutes les demandes</button>
+                        ${daToApprove.length > 0 ? '<button class="tab ' + (this.state.currentTab === 'validation' ? 'active' : '') + '" onclick="app.switchTab(\'validation\')">À valider (' + daToApprove.length + ')</button>' : ''}
+                        <button class="tab ${this.state.currentTab === 'creer' ? 'active' : ''}" onclick="app.switchTab('creer')">Créer une DA</button>
+                    </div>
+
+                    <div class="content">
+                        ${this.state.currentTab === 'demandes' ? this.renderDemandes(demandes) : ''}
+                        ${this.state.currentTab === 'validation' ? this.renderValidation(daToApprove) : ''}
+                        ${this.state.currentTab === 'creer' ? this.renderCreateForm() : ''}
+                    </div>
+                </div>`;
+
+                this.state.notifications.forEach(n => {
+                    const color = n.type === 'success' ? '#10b981' : '#ef4444';
+                    html += `<div style="position: fixed; top: 20px; right: 20px; background: white; border-left: 4px solid ${color}; border-radius: 8px; padding: 1rem; max-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 2000;">${n.message}</div>`;
+                });
+
+                document.getElementById('app').innerHTML = html;
+            },
+
+            renderDemandes(demandes) {
+                if (demandes.length === 0) {
+                    return '<div class="empty">📋 Aucune demande en cours</div>';
+                }
+                let html = '<button class="btn" onclick="app.exportExcel()">📊 Exporter Excel</button><table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Montant</th><th>Urgence</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
+                demandes.forEach(da => {
+                    const canApprove = (this.state.currentRole === 'dg' && da.approvals.acheteur.approuve && !da.approvals.dg.approuve) || 
+                                      (this.state.currentRole === 'compta' && da.approvals.dg.approuve && !da.approvals.compta.approuve);
+                    html += `<tr>
+                        <td><strong>#${da.id}</strong></td>
+                        <td>${da.filiale}</td>
+                        <td>${Number(da.montant).toLocaleString('fr-FR')} XOF</td>
+                        <td>${da.urgence}</td>
+                        <td><span class="status ${da.statut === 'En attente' ? 'status-pending' : 'status-approved'}">${da.statut}</span></td>
+                        <td>${canApprove ? '<button class="btn btn-success btn-small" onclick="app.approveDA(' + da.id + ')">✓ Approuver</button>' : ''}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                return html;
+            },
+
+            renderValidation(daToApprove) {
+                if (daToApprove.length === 0) {
+                    return '<div class="empty">✓ Aucune demande à valider</div>';
+                }
+                let html = '<table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Montant</th><th>Urgence</th><th>Actions</th></tr></thead><tbody>';
+                daToApprove.forEach(da => {
+                    html += `<tr>
+                        <td><strong>#${da.id}</strong></td>
+                        <td>${da.filiale}</td>
+                        <td><strong>${Number(da.montant).toLocaleString('fr-FR')} XOF</strong></td>
+                        <td>${da.urgence}</td>
+                        <td><button class="btn btn-success btn-small" onclick="app.approveDA(${da.id})">✓ Approuver</button></td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                return html;
+            },
+
+            renderCreateForm() {
+                return `<form onsubmit="app.handleCreateDA(event)" style="max-width: 600px;">
+                    <div class="form-group">
+                        <label>Filiale *</label>
+                        <select id="filiale" required>
+                            <option value="">Sélectionner</option>
+                            <option>PC PLUS GROUP</option>
+                            <option>SINO AFRIC</option>
+                            <option>SN PC PLUS</option>
+                            <option>XCOBAT</option>
+                            <option>PC PLUS TECHNOLOGIE</option>
+                            <option>AGRIMOTORS</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Montant (XOF) *</label>
+                        <input type="number" id="montant" placeholder="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Urgence *</label>
+                        <select id="urgence" required>
+                            <option value="">Sélectionner</option>
+                            <option>Normal</option>
+                            <option>Urgent</option>
+                            <option>Très urgent</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">Créer la demande</button>
+                </form>`;
+            },
+
+            handleCreateDA(e) {
+                e.preventDefault();
+                const filiale = document.getElementById('filiale').value;
+                const montant = document.getElementById('montant').value;
+                const urgence = document.getElementById('urgence').value;
+                if (filiale && montant && urgence) {
+                    this.createDA(filiale, montant, urgence);
+                }
+            },
+
+            switchTab(tab) {
+                this.state.currentTab = tab;
+                this.render();
+            },
+
+            exportExcel() {
+                const data = this.state.demandes.map(da => ({
+                    'ID': da.id,
+                    'Filiale': da.filiale,
+                    'Montant (XOF)': da.montant,
+                    'Urgence': da.urgence,
+                    'Statut': da.statut,
+                    'Demandeur': da.demandeur,
+                    'Date': da.dateCreation
+                }));
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'DA');
+                XLSX.writeFile(wb, 'DA_Export.xlsx');
+                this.notify('Excel exporté', 'success');
+            }
+        };
+
+        app.init();
+    </script>
+</body>
+</html>
