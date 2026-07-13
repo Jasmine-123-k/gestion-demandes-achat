@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Demandes d'Achat - PC PLUS GROUP</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 1rem; }
+        .header { background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .header-left { display: flex; align-items: center; gap: 1rem; }
+        .logo { height: 50px; }
+        .header-left h1 { font-size: 24px; font-weight: 600; }
+        .user-section { display: flex; gap: 1rem; align-items: center; position: relative; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; }
+        .avatar:hover { background: #1d4ed8; }
+        .user-info { text-align: right; }
+        .user-info strong { display: block; font-size: 14px; }
+        .user-info small { font-size: 12px; color: #666; }
+        .logout-menu { position: absolute; top: 50px; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.5rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; z-index: 100; }
+        .logout-menu.show { display: block; }
+        .logout-menu button { width: 100%; padding: 0.5rem 1rem; border: none; background: transparent; cursor: pointer; text-align: left; font-size: 13px; }
+        .logout-menu button:hover { background: #f3f4f6; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .stat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: 600; color: #2563eb; }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid #e5e7eb; flex-wrap: wrap; }
+        .tab { padding: 0.75rem 1.5rem; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: 500; color: #666; border-bottom: 2px solid transparent; }
+        .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+        .content { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 0.35rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; font-family: inherit; }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        .btn { padding: 0.6rem 1.2rem; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .btn:hover { background: #1d4ed8; }
+        .btn-success { background: #10b981; }
+        .btn-danger { background: #ef4444; }
+        .btn-small { padding: 0.35rem 0.75rem; font-size: 12px; }
+        .btn-refresh { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: #2563eb; color: white; border: none; cursor: pointer; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .btn-refresh:hover { background: #1d4ed8; transform: scale(1.1); }
+        .btn-refresh.spinning { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 1rem; }
+        .table th { background: #f3f4f6; padding: 0.75rem; text-align: left; font-weight: 600; }
+        .table td { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; }
+        .status { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-approved { background: #d1fae5; color: #065f46; }
+        .status-validated { background: #dbeafe; color: #1e40af; }
+        .status-rejected { background: #fee2e2; color: #991b1b; }
+        .login { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .login-box { background: white; border-radius: 12px; padding: 2.5rem; max-width: 450px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .login-header { text-align: center; margin-bottom: 2rem; }
+        .login-logo { width: 100%; max-width: 180px; height: auto; margin: 0 auto 1.5rem; }
+        .login-logo svg { width: 100%; height: auto; }
+        .login-box h1 { font-size: 24px; margin-bottom: 0.5rem; text-align: center; }
+        .login-box p { text-align: center; color: #666; margin-bottom: 2rem; }
+        .empty { text-align: center; padding: 2rem; color: #999; }
+        .badge { display: inline-block; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+        .notification { position: fixed; top: 20px; right: 20px; background: white; border-left: 4px solid #10b981; border-radius: 8px; padding: 1rem; max-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 2000; animation: slideIn 0.3s ease-out; }
+        .notification.error { border-left-color: #ef4444; }
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .user-select-screen { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem; }
+        .user-card { background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .user-card:hover { border-color: #2563eb; background: #eff6ff; }
+        .user-card-avatar { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; font-weight: 600; }
+        .user-card.acheteur .user-card-avatar { background: #2563eb; }
+        .user-card.dg .user-card-avatar { background: #8b5cf6; }
+        .user-card.compta .user-card-avatar { background: #ec4899; }
+        .user-card-name { font-weight: 600; font-size: 14px; margin-bottom: 0.5rem; }
+        .user-card-role { font-size: 12px; color: #666; }
+        .btn-group { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        const app = {
+            state: {
+                currentUser: null,
+                currentRole: null,
+                demandes: [],
+                notifications: [],
+                currentTab: 'demandes',
+                nextId: 1,
+                unlocked: false,
+                showUserSelect: false,
+                users: {
+                    'jasmine': { password: 'jasmine123', name: 'Jasmine Koui', role: 'acheteur' },
+                    'cheick': { password: 'cheick123', name: 'Cheick Cissé', role: 'acheteur' },
+                    'issouf': { password: 'issouf123', name: 'Mr Issouf Bamba', role: 'dg' },
+                    'compta': { password: 'compta123', name: 'Comptabilité', role: 'compta' }
+                },
+                accessCode: 'PC2024'
+            },
+
+            init() {
+                const savedUser = localStorage.getItem('currentUser');
+                const savedDemandes = localStorage.getItem('demandes');
+                const savedNextId = localStorage.getItem('nextId');
+                const unlocked = localStorage.getItem('unlocked');
+                
+                if (savedDemandes) this.state.demandes = JSON.parse(savedDemandes);
+                if (savedNextId) this.state.nextId = parseInt(savedNextId);
+                if (unlocked === 'true') this.state.unlocked = true;
+                
+                if (!this.state.unlocked) {
+                    this.renderAccessScreen();
+                } else if (savedUser) {
+                    const user = JSON.parse(savedUser);
+                    this.state.currentUser = user.name;
+                    this.state.currentRole = user.role;
+                    this.render();
+                    this.enableNotifications();
+                } else {
+                    this.state.showUserSelect = true;
+                    this.renderUserSelect();
+                }
+            },
+
+            verifyAccess(code) {
+                if (code === this.state.accessCode) {
+                    this.state.unlocked = true;
+                    localStorage.setItem('unlocked', 'true');
+                    this.state.showUserSelect = true;
+                    this.renderUserSelect();
+                } else {
+                    this.notify('Clé d\'accès incorrecte', 'error');
+                }
+            },
+
+            selectUser(username) {
+                const user = this.state.users[username];
+                if (!user) return;
+                this.state.selectedUsername = username;
+                this.renderLogin();
+            },
+
+            login(password) {
+                const username = this.state.selectedUsername;
+                const user = this.state.users[username];
+                if (user && user.password === password) {
+                    this.state.currentUser = user.name;
+                    this.state.currentRole = user.role;
+                    localStorage.setItem('currentUser', JSON.stringify({ username, name: user.name, role: user.role }));
+                    this.notify('Bienvenue ' + user.name + ' !', 'success');
+                    this.render();
+                    this.enableNotifications();
+                } else {
+                    this.notify('Mot de passe incorrect', 'error');
+                }
+            },
+
+            logout() {
+                this.state.currentUser = null;
+                this.state.currentRole = null;
+                this.state.showUserSelect = true;
+                localStorage.removeItem('currentUser');
+                this.renderUserSelect();
+            },
+
+            enableNotifications() {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    setInterval(() => this.checkForNotifications(), 5000);
+                } else if ('Notification' in window && Notification.permission !== 'denied') {
+                    Notification.requestPermission();
+                }
+            },
+
+            checkForNotifications() {
+                if (this.state.currentRole === 'dg' || this.state.currentRole === 'compta') {
+                    const toApprove = this.getDAsToApprove();
+                    if (toApprove.length > 0) {
+                        const lastNotified = localStorage.getItem('lastNotified');
+                        if (!lastNotified || Date.now() - parseInt(lastNotified) > 300000) {
+                            new Notification('Nouvelle demande !', { body: 'Vous avez ' + toApprove.length + ' demande(s) à valider' });
+                            localStorage.setItem('lastNotified', Date.now().toString());
+                        }
+                    }
+                }
+            },
+
+            autoBackup() {
+                const backup = {
+                    timestamp: new Date().toLocaleString('fr-FR'),
+                    demandes: this.state.demandes,
+                    nextId: this.state.nextId
+                };
+                localStorage.setItem('backup_' + Date.now(), JSON.stringify(backup));
+                localStorage.setItem('lastBackup', new Date().toLocaleString('fr-FR'));
+            },
+
+            refresh() {
+                const btn = document.querySelector('.btn-refresh');
+                if (btn) {
+                    btn.classList.add('spinning');
+                    setTimeout(() => { btn.classList.remove('spinning'); }, 1000);
+                }
+                this.render();
+            },
+
+            notify(message, type) {
+                const id = Date.now();
+                this.state.notifications.push({ id, message, type });
+                setTimeout(() => { this.state.notifications = this.state.notifications.filter(n => n.id !== id); }, 3000);
+            },
+
+            createDA(filiale, description, montant, urgence) {
+                const da = {
+                    id: this.state.nextId++,
+                    filiale, description, montant, urgence,
+                    demandeur: this.state.currentUser,
+                    dateCreation: new Date().toLocaleDateString('fr-FR'),
+                    statut: 'En attente',
+                    approvals: { acheteur: { approuve: true, date: new Date().toLocaleDateString('fr-FR') }, dg: { approuve: null, date: null }, compta: { approuve: null, date: null } }
+                };
+                this.state.demandes.unshift(da);
+                localStorage.setItem('demandes', JSON.stringify(this.state.demandes));
+                localStorage.setItem('nextId', this.state.nextId.toString());
+                this.autoBackup();
+                this.notify('DA #' + da.id + ' créée !', 'success');
+                this.state.currentTab = 'demandes';
+                this.render();
+            },
+
+            approveDA(id) {
+                const da = this.state.demandes.find(d => d.id === id);
+                if (!da) return;
+                if (this.state.currentRole === 'dg') {
+                    da.approvals.dg.approuve = true;
+                    da.approvals.dg.date = new Date().toLocaleDateString('fr-FR');
+                    da.statut = 'Approuvée - En attente Compta';
+                } else if (this.state.currentRole === 'compta') {
+                    da.approvals.compta.approuve = true;
+                    da.approvals.compta.date = new Date().toLocaleDateString('fr-FR');
+                    da.statut = 'Validée';
+                }
+                localStorage.setItem('demandes', JSON.stringify(this.state.demandes));
+                this.autoBackup();
+                this.notify('DA #' + id + ' approuvée !', 'success');
+                this.render();
+            },
+
+            rejectDA(id) {
+                const da = this.state.demandes.find(d => d.id === id);
+                if (!da) return;
+                da.statut = 'Rejetée';
+                localStorage.setItem('demandes', JSON.stringify(this.state.demandes));
+                this.autoBackup();
+                this.notify('DA #' + id + ' rejetée', 'error');
+                this.render();
+            },
+
+            getDAsToApprove() {
+                if (this.state.currentRole === 'dg') {
+                    return this.state.demandes.filter(d => d.approvals.acheteur.approuve && d.approvals.dg.approuve === null && d.statut === 'En attente');
+                } else if (this.state.currentRole === 'compta') {
+                    return this.state.demandes.filter(d => d.approvals.dg.approuve === true && d.approvals.compta.approuve === null && d.statut === 'Approuvée - En attente Compta');
+                }
+                return [];
+            },
+
+            renderAccessScreen() {
+                document.getElementById('app').innerHTML = `<div class="login"><div class="login-box"><div class="login-header"><div class="login-logo"><svg viewBox="0 0 220 80" xmlns="http://www.w3.org/2000/svg"><text x="10" y="60" font-size="48" font-weight="bold" fill="#000">PC</text><text x="70" y="60" font-size="48" font-weight="bold" fill="#1168a7">PLUS</text><text x="150" y="60" font-size="48" font-weight="bold" fill="#0099cc">GROUP</text></svg></div><h1>Accès Sécurisé</h1><p>Entrez la clé d'accès</p></div><form onsubmit="app.handleAccessCode(event)"><div class="form-group"><label>Clé d'accès</label><input type="password" id="accessCode" placeholder="••••••" required autofocus></div><button type="submit" class="btn" style="width: 100%;">Accéder</button></form></div></div>`;
+            },
+
+            handleAccessCode(e) {
+                e.preventDefault();
+                const code = document.getElementById('accessCode').value;
+                this.verifyAccess(code);
+            },
+
+            renderUserSelect() {
+                let html = `<div class="login"><div class="login-box"><div class="login-header"><div class="login-logo"><svg viewBox="0 0 220 80" xmlns="http://www.w3.org/2000/svg"><text x="10" y="60" font-size="48" font-weight="bold" fill="#000">PC</text><text x="70" y="60" font-size="48" font-weight="bold" fill="#1168a7">PLUS</text><text x="150" y="60" font-size="48" font-weight="bold" fill="#0099cc">GROUP</text></svg></div><h1>Sélectionnez votre profil</h1></div><div class="user-select-screen">`;
+                
+                Object.entries(this.state.users).forEach(([username, user]) => {
+                    const emoji = user.role === 'dg' ? '👔' : user.role === 'compta' ? '💼' : '📊';
+                    html += `<div class="user-card ${user.role}" onclick="app.selectUser('${username}')">
+                        <div class="user-card-avatar">${emoji}</div>
+                        <div class="user-card-name">${user.name}</div>
+                        <div class="user-card-role">${user.role === 'dg' ? 'Direction Générale' : user.role === 'compta' ? 'Comptabilité' : 'Acheteur'}</div>
+                    </div>`;
+                });
+                
+                html += `</div></div></div>`;
+                document.getElementById('app').innerHTML = html;
+            },
+
+            renderLogin() {
+                const user = this.state.users[this.state.selectedUsername];
+                const roleLabel = user.role === 'dg' ? 'Direction Générale' : user.role === 'acheteur' ? 'Acheteur' : 'Comptabilité';
+                document.getElementById('app').innerHTML = `<div class="login"><div class="login-box"><div class="login-header"><div class="login-logo"><svg viewBox="0 0 220 80" xmlns="http://www.w3.org/2000/svg"><text x="10" y="60" font-size="48" font-weight="bold" fill="#000">PC</text><text x="70" y="60" font-size="48" font-weight="bold" fill="#1168a7">PLUS</text><text x="150" y="60" font-size="48" font-weight="bold" fill="#0099cc">GROUP</text></svg></div><h1>${user.name}</h1><p>${roleLabel}</p></div><form onsubmit="app.handleLogin(event)"><div class="form-group"><label>Mot de passe</label><input type="password" id="password" placeholder="••••••" required autofocus></div><button type="submit" class="btn" style="width: 100%;">Se connecter</button></form><button type="button" class="btn btn-secondary" style="width: 100%; margin-top: 1rem;" onclick="app.state.showUserSelect = true; app.renderUserSelect();">Retour</button></div></div>`;
+            },
+
+            handleLogin(e) {
+                e.preventDefault();
+                const password = document.getElementById('password').value;
+                this.login(password);
+            },
+
+            render() {
+                const daToApprove = this.getDAsToApprove();
+                const demandes = this.state.demandes.filter(d => d.statut !== 'Validée' && d.statut !== 'Rejetée');
+                const archived = this.state.demandes.filter(d => d.statut === 'Validée' || d.statut === 'Rejetée');
+
+                let html = `<div class="container"><div class="header"><div class="header-top"><div class="header-left"><svg width="160" height="60" viewBox="0 0 220 80" xmlns="http://www.w3.org/2000/svg" class="logo"><text x="10" y="60" font-size="48" font-weight="bold" fill="#000">PC</text><text x="70" y="60" font-size="48" font-weight="bold" fill="#1168a7">PLUS</text><text x="150" y="60" font-size="48" font-weight="bold" fill="#0099cc">GROUP</text></svg><h1>Gestion des Demandes d'Achat</h1></div><div class="user-section"><div class="avatar" onclick="document.querySelector('.logout-menu').classList.toggle('show')" title="Cliquez pour vous déconnecter">${this.state.currentUser.charAt(0).toUpperCase()}</div><div class="user-info"><strong>${this.state.currentUser}</strong><small>${this.state.currentRole === 'dg' ? 'Direction Générale' : this.state.currentRole === 'acheteur' ? 'Acheteur' : 'Comptabilité'}</small></div>${daToApprove.length > 0 ? '<div class="badge">' + daToApprove.length + '</div>' : ''}<div class="logout-menu"><button onclick="app.logout()">Déconnexion</button></div></div></div><div class="stats"><div class="stat"><div class="stat-value">${this.state.demandes.length}</div>Total</div><div class="stat"><div class="stat-value">${this.state.demandes.filter(d => d.statut === 'En attente').length}</div>En attente</div><div class="stat"><div class="stat-value">${this.state.demandes.filter(d => d.statut === 'Approuvée - En attente Compta').length}</div>Approuvées</div><div class="stat"><div class="stat-value">${this.state.demandes.filter(d => d.statut === 'Validée').length}</div>Validées</div></div></div><div class="tabs"><button class="tab ${this.state.currentTab === 'demandes' ? 'active' : ''}" onclick="app.switchTab('demandes')">Toutes les demandes</button><button class="tab ${this.state.currentTab === 'validation' ? 'active' : ''}" onclick="app.switchTab('validation')">À valider ${daToApprove.length > 0 ? '(' + daToApprove.length + ')' : ''}</button>${this.state.currentRole === 'acheteur' ? '<button class="tab ' + (this.state.currentTab === 'creer' ? 'active' : '') + '" onclick="app.switchTab(\'creer\')">Créer une DA</button>' : ''}<button class="tab ${this.state.currentTab === 'archive' ? 'active' : ''}" onclick="app.switchTab('archive')">Archive</button></div><div class="content">${this.state.currentTab === 'demandes' ? this.renderDemandes(demandes) : ''}${this.state.currentTab === 'validation' ? this.renderValidation(daToApprove) : ''}${this.state.currentTab === 'creer' ? this.renderCreateForm() : ''}${this.state.currentTab === 'archive' ? this.renderArchive(archived) : ''}</div><button class="btn-refresh" onclick="app.refresh()" title="Actualiser">🔄</button></div>`;
+                this.state.notifications.forEach(n => { const cls = n.type === 'error' ? 'error' : ''; html += `<div class="notification ${cls}">${n.message}</div>`; });
+                document.getElementById('app').innerHTML = html;
+            },
+
+            renderDemandes(demandes) {
+                if (demandes.length === 0) return '<div class="empty">📋 Aucune demande en cours</div>';
+                let html = '<div class="btn-group"><button class="btn" onclick="app.exportExcel()">📊 Exporter Excel</button><button class="btn" style="background: #6366f1;" onclick="app.downloadBackup()">💾 Télécharger Backup</button></div><table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Description</th><th>Montant</th><th>Urgence</th><th>Demandeur</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
+                demandes.forEach(da => {
+                    const canApprove = (this.state.currentRole === 'dg' && da.approvals.acheteur.approuve && da.approvals.dg.approuve === null) || (this.state.currentRole === 'compta' && da.approvals.dg.approuve === true && da.approvals.compta.approuve === null);
+                    html += `<tr><td><strong>#${da.id}</strong></td><td>${da.filiale}</td><td>${da.description || '-'}</td><td>${Number(da.montant).toLocaleString('fr-FR')} XOF</td><td>${da.urgence}</td><td>${da.demandeur}</td><td><span class="status ${da.statut === 'En attente' ? 'status-pending' : 'status-approved'}">${da.statut}</span></td><td>${canApprove ? '<button class="btn btn-success btn-small" onclick="app.approveDA(' + da.id + ')">✓</button>' : ''}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                return html;
+            },
+
+            renderValidation(daToApprove) {
+                if (daToApprove.length === 0) return '<div class="empty">✓ Aucune demande à valider</div>';
+                let html = '<table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Description</th><th>Montant</th><th>Urgence</th><th>Demandeur</th><th>Actions</th></tr></thead><tbody>';
+                daToApprove.forEach(da => {
+                    html += `<tr><td><strong>#${da.id}</strong></td><td>${da.filiale}</td><td>${da.description || '-'}</td><td><strong>${Number(da.montant).toLocaleString('fr-FR')} XOF</strong></td><td>${da.urgence}</td><td>${da.demandeur}</td><td><button class="btn btn-success btn-small" onclick="app.approveDA(${da.id})">✓ Approuver</button> <button class="btn btn-danger btn-small" onclick="app.rejectDA(${da.id})">✗ Rejeter</button></td></tr>`;
+                });
+                html += '</tbody></table>';
+                return html;
+            },
+
+            renderCreateForm() {
+                return `<form onsubmit="app.handleCreateDA(event)" style="max-width: 600px;"><div class="form-group"><label>Filiale *</label><select id="filiale" required><option value="">Sélectionner</option><option>PC PLUS GROUP</option><option>SINO AFRIC</option><option>SN PC PLUS</option><option>XCOBAT</option><option>PC PLUS TECHNOLOGIE</option><option>AGRIMOTORS</option></select></div><div class="form-group"><label>Description du besoin *</label><textarea id="description" placeholder="Détails et justification de la demande" required></textarea></div><div class="form-group"><label>Montant (XOF) *</label><input type="number" id="montant" placeholder="0" required></div><div class="form-group"><label>Urgence *</label><select id="urgence" required><option value="">Sélectionner</option><option>Normal</option><option>Urgent</option><option>Très urgent</option></select></div><button type="submit" class="btn">Créer la demande</button></form>`;
+            },
+
+            renderArchive(archived) {
+                if (archived.length === 0) return '<div class="empty">📦 Archive vide</div>';
+                let html = '<table class="table"><thead><tr><th>ID</th><th>Filiale</th><th>Description</th><th>Montant</th><th>Demandeur</th><th>Statut</th><th>Date</th></tr></thead><tbody>';
+                archived.forEach(da => {
+                    const statusClass = da.statut === 'Validée' ? 'status-validated' : 'status-rejected';
+                    html += `<tr><td><strong>#${da.id}</strong></td><td>${da.filiale}</td><td>${da.description || '-'}</td><td>${Number(da.montant).toLocaleString('fr-FR')} XOF</td><td>${da.demandeur}</td><td><span class="status ${statusClass}">${da.statut}</span></td><td>${da.dateCreation}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                return html;
+            },
+
+            handleCreateDA(e) {
+                e.preventDefault();
+                const filiale = document.getElementById('filiale').value;
+                const description = document.getElementById('description').value;
+                const montant = document.getElementById('montant').value;
+                const urgence = document.getElementById('urgence').value;
+                if (filiale && description && montant && urgence) {
+                    this.createDA(filiale, description, montant, urgence);
+                    document.getElementById('filiale').value = '';
+                    document.getElementById('description').value = '';
+                    document.getElementById('montant').value = '';
+                    document.getElementById('urgence').value = '';
+                }
+            },
+
+            switchTab(tab) {
+                this.state.currentTab = tab;
+                this.render();
+            },
+
+            exportExcel() {
+                try {
+                    const data = this.state.demandes.map(da => ({
+                        'ID': da.id,
+                        'Filiale': da.filiale,
+                        'Description': da.description || '',
+                        'Montant (XOF)': Number(da.montant),
+                        'Urgence': da.urgence,
+                        'Demandeur': da.demandeur,
+                        'Statut': da.statut,
+                        'Date': da.dateCreation
+                    }));
+                    
+                    if (data.length === 0) {
+                        this.notify('Aucune donnée à exporter', 'error');
+                        return;
+                    }
+
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    ws['!cols'] = [
+                        { wch: 5 },
+                        { wch: 20 },
+                        { wch: 30 },
+                        { wch: 15 },
+                        { wch: 12 },
+                        { wch: 15 },
+                        { wch: 20 },
+                        { wch: 15 }
+                    ];
+
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'Demandes');
+                    XLSX.writeFile(wb, 'DA_' + new Date().toLocaleDateString('fr-FR') + '.xlsx');
+                    this.notify('Excel exporté avec succès ! ✓', 'success');
+                } catch (err) {
+                    console.error('Erreur export:', err);
+                    this.notify('Erreur lors de l\'export Excel', 'error');
+                }
+            },
+
+            downloadBackup() {
+                try {
+                    const backup = {
+                        timestamp: new Date().toLocaleString('fr-FR'),
+                        demandes: this.state.demandes,
+                        nextId: this.state.nextId
+                    };
+                    
+                    const dataStr = JSON.stringify(backup, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'backup_' + new Date().toLocaleDateString('fr-FR').replace(/\//g, '-') + '.json';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    
+                    this.notify('Backup téléchargé ! 💾', 'success');
+                } catch (err) {
+                    console.error('Erreur backup:', err);
+                    this.notify('Erreur lors du backup', 'error');
+                }
+            }
+        };
+
+        app.init();
+    </script>
+</body>
+</html>
